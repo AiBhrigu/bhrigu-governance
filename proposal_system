@@ -1,0 +1,48 @@
+
+---
+
+### 📂 2️⃣ `proposal_system.mo`
+
+```motoko
+import Debug "mo:base/Debug";
+import Nat "mo:base/Nat";
+
+actor class Governance {
+
+  type Proposal = {
+    id: Nat;
+    description: Text;
+    votes_yes: Nat;
+    votes_no: Nat;
+    finalized: Bool;
+  };
+
+  stable var proposals: [Proposal] = [];
+
+  public func add_proposal(desc: Text): async Nat {
+    let new_id = Nat.fromInt(proposals.size());
+    let prop = { id = new_id; description = desc; votes_yes = 0; votes_no = 0; finalized = false };
+    proposals := proposals # [prop];
+    Debug.print("Added proposal ID: " # Nat.toText(new_id));
+    return new_id;
+  };
+
+  public query func list_proposals(): async [Proposal] {
+    return proposals;
+  };
+
+  public func vote_proposal(id: Nat, approve: Bool): async () {
+    proposals := Array.map<Proposal, Proposal>(proposals, func(p) {
+      if (p.id == id and not p.finalized) {
+        if (approve) { { p with votes_yes = p.votes_yes + 1 } } 
+        else { { p with votes_no = p.votes_no + 1 } }
+      } else { p }
+    });
+  };
+
+  public func finalize_proposal(id: Nat): async () {
+    proposals := Array.map<Proposal, Proposal>(proposals, func(p) {
+      if (p.id == id) { { p with finalized = true } } else { p }
+    });
+  };
+};
